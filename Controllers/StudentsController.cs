@@ -32,12 +32,20 @@ namespace ContosoUniversity.Controllers
         }
 
         // GET: Students
-        public async Task<IActionResult> Index(string sortOrder)
+        public async Task<IActionResult> Index(string sortOrder, string searchString)
         {
             StudentsListViewModel.NameSortParam = String.IsNullOrEmpty(sortOrder) ? NAME_DESC : "";
             StudentsListViewModel.DateSortParam = sortOrder == DATE_ASC ? DATE_DESC : DATE_ASC;
+            StudentsListViewModel.SearchString = searchString;
 
             var students = _context.Students.AsQueryable();
+
+            // filter students by search string first.
+            if (!String.IsNullOrEmpty(searchString))
+            {
+                students = students.Where(s => s.LastName.Contains(searchString) 
+                    || s.FirstMidName.Contains(searchString));
+            }
 
             switch (sortOrder)
             {

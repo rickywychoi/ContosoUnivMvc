@@ -10,6 +10,7 @@ namespace ContosoUniversity.ViewModels
     {
         public string NameSortParam { get; set; }
         public string DateSortParam { get; set; }
+        public string SearchString { get; set; } = "";
         public IEnumerable<Student> StudentsList { get; set; }
     }
 }
