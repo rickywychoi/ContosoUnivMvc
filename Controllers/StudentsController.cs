@@ -34,7 +34,11 @@ namespace ContosoUniversity.Controllers
             }
 
             var student = await _context.Students
+                .Include(s => s.Enrollments)
+                    .ThenInclude(e => e.Course)
+                .AsNoTracking()
                 .FirstOrDefaultAsync(m => m.Id == id);
+
             if (student == null)
             {
                 return NotFound();
@@ -53,14 +57,24 @@ namespace ContosoUniversity.Controllers
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Id,LastName,FirstMidName,EnrollmentDate")] Student student)
+        [ValidateAntiForgeryToken] // prevent CSRF attacks
+        public async Task<IActionResult> Create([Bind("LastName,FirstMidName,EnrollmentDate")] Student student) // No need to bind Id cuz db auto generates it
         {
-            if (ModelState.IsValid)
+            try
             {
-                _context.Add(student);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                if (ModelState.IsValid)
+                {
+                    _context.Add(student);
+                    await _context.SaveChangesAsync();
+                    return RedirectToAction(nameof(Index));
+                }
+            }
+            catch (DbUpdateException)
+            {
+                // Log the error
+                ModelState.AddModelError("", "Unable to save changes. " +
+                    "Try again, and if the problem persists " +
+                    "see your system administrator.");
             }
             return View(student);
         }
@@ -88,30 +102,62 @@ namespace ContosoUniversity.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,LastName,FirstMidName,EnrollmentDate")] Student student)
         {
+            // TODO: Comment out the below and uncomment the original logic
+            return await AlternativeEdit(id, student);
+
+            //if (id == null)
+            //{
+            //    return NotFound();
+            //}
+
+            //var studentToUpdate = await _context.Students.FirstOrDefaultAsync(s => s.Id == id);
+            //if (await TryUpdateModelAsync<Student>(
+            //        studentToUpdate,
+            //        "",
+            //        s => s.FirstMidName, s => s.LastName, s => s.EnrollmentDate
+            //    ))
+            //{
+            //    try
+            //    {
+            //        await _context.SaveChangesAsync();
+            //        return RedirectToAction(nameof(Index));
+            //    }
+            //    catch (DbUpdateException)
+            //    {
+            //        ModelState.AddModelError("", "Unable to save changes. " +
+            //            "Try again, and if the problem persists, " +
+            //            "see your system administrator.");
+            //    }
+            //}
+            //return View(studentToUpdate);
+        }
+
+        /// <summary>
+        /// Alternative approach to edit and save the entity state.
+        /// </summary>
+        /// <param name="id">Id of the student to edit</param>
+        /// <param name="student">Student model to edit</param>
+        /// <returns></returns>
+        private async Task<IActionResult> AlternativeEdit(int id, [Bind("Id,LastName,FirstMidName,EnrollmentDate")] Student student)
+        {
             if (id != student.Id)
             {
                 return NotFound();
             }
-
             if (ModelState.IsValid)
             {
                 try
                 {
                     _context.Update(student);
                     await _context.SaveChangesAsync();
+                    return RedirectToAction(nameof(Index));
                 }
-                catch (DbUpdateConcurrencyException)
+                catch (DbUpdateException)
                 {
-                    if (!StudentExists(student.Id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
+                    ModelState.AddModelError("", "Unable to save changes. " +
+                        "Try again, and if the problem persists, " +
+                        "see your system administrator.");
                 }
-                return RedirectToAction(nameof(Index));
             }
             return View(student);
         }
