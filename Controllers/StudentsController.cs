@@ -32,12 +32,26 @@ namespace ContosoUniversity.Controllers
         }
 
         // GET: Students
-        public async Task<IActionResult> Index(string sortOrder, string searchString)
+        public async Task<IActionResult> Index(string sortOrder, 
+            string searchString, 
+            string currentFilter,
+            int? pageNumber)
         {
+            StudentsListViewModel.CurrentSort = sortOrder;
             StudentsListViewModel.NameSortParam = String.IsNullOrEmpty(sortOrder) ? NAME_DESC : "";
             StudentsListViewModel.DateSortParam = sortOrder == DATE_ASC ? DATE_DESC : DATE_ASC;
-            StudentsListViewModel.SearchString = searchString;
 
+            if (searchString != null)
+            {
+                pageNumber = 1;
+            }
+            else
+            {
+                searchString = currentFilter;
+            }
+
+            StudentsListViewModel.SearchString = searchString;
+            
             var students = _context.Students.AsQueryable();
 
             // filter students by search string first.
@@ -63,7 +77,12 @@ namespace ContosoUniversity.Controllers
                     break;
             }
 
-            StudentsListViewModel.StudentsList = await students.AsNoTracking().ToListAsync();
+            int pageSize = 3;
+
+            StudentsListViewModel.StudentsList = await PaginatedList<Student>.CreateAsync(students.AsNoTracking(),
+                    pageNumber ?? 1,
+                    pageSize
+                );
 
             return View(StudentsListViewModel);
         }

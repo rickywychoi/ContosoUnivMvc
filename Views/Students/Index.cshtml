@@ -27,7 +27,7 @@
                 <a asp-action="Index" asp-route-sortOrder="@Model.NameSortParam">Last Name</a>
             </th>
             <th>
-                First Mid Name
+                First Name
             </th>
             <th>
                 <a asp-action="Index" asp-route-sortOrder="@Model.DateSortParam">Enrollment Date</a>
@@ -36,7 +36,8 @@
         </tr>
     </thead>
     <tbody>
-@foreach (var item in Model.StudentsList) {
+@foreach (var item in Model.StudentsList)
+{
         <tr>
             <td>
                 @Html.DisplayFor(modelItem => item.LastName)
@@ -56,3 +57,25 @@
 }
     </tbody>
 </table>
+
+@{ 
+    var prevDisabled = !Model.StudentsList.HasPreviousPage ? "disabled" : "";
+    var nextDisabled = !Model.StudentsList.HasNextPage ? "disabled" : "";
+}
+
+<a
+   asp-action="Index"
+   asp-route-sortOrder="@Model.CurrentSort"
+   asp-route-pageNumber="@(Model.StudentsList.PageIndex - 1)"
+   asp-route-currentFilter="@Model.SearchString"
+   class="btn btn-outline-dark @prevDisabled">
+    Previous
+</a>
+<span>@Model.StudentsList.PageIndex</span>
+<a asp-action="Index"
+   asp-route-sortOrder="@Model.CurrentSort"
+   asp-route-pageNumber="@(Model.StudentsList.PageIndex + 1)"
+   asp-route-currentFilter="@Model.SearchString"
+   class="btn btn-outline-dark @nextDisabled">
+    Next
+</a>
