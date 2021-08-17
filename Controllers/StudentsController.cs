@@ -7,12 +7,24 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using ContosoUniversity.Data;
 using ContosoUniversity.Models;
+using ContosoUniversity.ViewModels;
 
 namespace ContosoUniversity.Controllers
 {
     public class StudentsController : Controller
     {
         private readonly SchoolContext _context;
+        
+        // Constants for sorting order in index page.
+        private const string NAME_DESC = "name_desc";
+        private const string DATE_DESC = "date_desc";
+        private const string DATE_ASC = "date_asc";
+
+        public StudentsListVM StudentsListViewModel { get; set; } = new StudentsListVM
+        {
+            NameSortParam = NAME_DESC,
+            DateSortParam = DATE_DESC
+        };
 
         public StudentsController(SchoolContext context)
         {
@@ -20,9 +32,32 @@ namespace ContosoUniversity.Controllers
         }
 
         // GET: Students
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(string sortOrder)
         {
-            return View(await _context.Students.ToListAsync());
+            StudentsListViewModel.NameSortParam = String.IsNullOrEmpty(sortOrder) ? NAME_DESC : "";
+            StudentsListViewModel.DateSortParam = sortOrder == DATE_ASC ? DATE_DESC : DATE_ASC;
+
+            var students = _context.Students.AsQueryable();
+
+            switch (sortOrder)
+            {
+                case NAME_DESC:
+                    students = students.OrderByDescending(s => s.LastName);
+                    break;
+                case DATE_ASC:
+                    students = students.OrderBy(s => s.EnrollmentDate);
+                    break;
+                case DATE_DESC:
+                    students = students.OrderByDescending(s => s.EnrollmentDate);
+                    break;
+                default:
+                    students = students.OrderBy(s => s.LastName);
+                    break;
+            }
+
+            StudentsListViewModel.StudentsList = await students.AsNoTracking().ToListAsync();
+
+            return View(StudentsListViewModel);
         }
 
         // GET: Students/Details/5

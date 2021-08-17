@@ -1,4 +1,4 @@
-﻿@model IEnumerable<ContosoUniversity.Models.Student>
+﻿@model ContosoUniversity.ViewModels.StudentsListVM
 
 @{
     ViewData["Title"] = "Index";
@@ -13,19 +13,19 @@
     <thead>
         <tr>
             <th>
-                @Html.DisplayNameFor(model => model.LastName)
+                <a asp-action="Index" asp-route-sortOrder="@Model.NameSortParam">Last Name</a>
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.FirstMidName)
+                First Mid Name
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.EnrollmentDate)
+                <a asp-action="Index" asp-route-sortOrder="@Model.DateSortParam">Enrollment Date</a>
             </th>
             <th></th>
         </tr>
     </thead>
     <tbody>
-@foreach (var item in Model) {
+@foreach (var item in Model.StudentsList) {
         <tr>
             <td>
                 @Html.DisplayFor(modelItem => item.LastName)
