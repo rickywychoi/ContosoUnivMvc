@@ -103,7 +103,7 @@ namespace ContosoUniversity.Controllers
         public async Task<IActionResult> Edit(int id, [Bind("Id,LastName,FirstMidName,EnrollmentDate")] Student student)
         {
             // TODO: Comment out the below and uncomment the original logic
-            return await AlternativeEdit(id, student);
+            return await AlternativeEditAsync(id, student);
 
             //if (id == null)
             //{
@@ -138,7 +138,7 @@ namespace ContosoUniversity.Controllers
         /// <param name="id">Id of the student to edit</param>
         /// <param name="student">Student model to edit</param>
         /// <returns></returns>
-        private async Task<IActionResult> AlternativeEdit(int id, [Bind("Id,LastName,FirstMidName,EnrollmentDate")] Student student)
+        private async Task<IActionResult> AlternativeEditAsync(int id, [Bind("Id,LastName,FirstMidName,EnrollmentDate")] Student student)
         {
             if (id != student.Id)
             {
@@ -163,7 +163,7 @@ namespace ContosoUniversity.Controllers
         }
 
         // GET: Students/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        public async Task<IActionResult> Delete(int? id, bool? saveChangesError = false)
         {
             if (id == null)
             {
@@ -171,10 +171,18 @@ namespace ContosoUniversity.Controllers
             }
 
             var student = await _context.Students
+                .AsNoTracking()
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (student == null)
             {
                 return NotFound();
+            }
+
+            if (saveChangesError.GetValueOrDefault())
+            {
+                ViewData["ErrorMessage"] =
+                    "Delete failed. Try again, and if the problem persists " +
+                    "see your system administrator.";
             }
 
             return View(student);
@@ -185,10 +193,40 @@ namespace ContosoUniversity.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var student = await _context.Students.FindAsync(id);
-            _context.Students.Remove(student);
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
+            // TODO: Comment out the below and uncomment the original logic
+            return await FasterDeleteAsync(id);
+
+            //var student = await _context.Students.FindAsync(id);
+            //if (student is null)
+            //{
+            //    return RedirectToAction(nameof(Index));
+            //}
+
+            //try
+            //{
+            //    _context.Students.Remove(student);
+            //    await _context.SaveChangesAsync();
+            //    return RedirectToAction(nameof(Index));
+            //}
+            //catch (DbUpdateException)
+            //{
+            //    return RedirectToAction(nameof(Delete), new { id, saveChangesError = true });
+            //}
+        }
+
+        private async Task<IActionResult> FasterDeleteAsync(int id)
+        {
+            try
+            {
+                var studentToDelete = new Student { Id = id }; // create temp student entity with Id to delete
+                _context.Entry(studentToDelete).State = EntityState.Deleted;
+                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
+            }
+            catch (DbUpdateException)
+            {
+                return RedirectToAction(nameof(Delete), new { id, saveChangesError = true });
+            }
         }
 
         private bool StudentExists(int id)
